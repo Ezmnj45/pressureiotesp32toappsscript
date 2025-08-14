@@ -1,0 +1,104 @@
+function doGet(e) {
+  Logger.log(JSON.stringify(e));
+  var result = 'Ok';
+  if (e.parameter == 'undefined') {
+    result = 'No Parameters';
+  }
+  else {
+    var sheet_id = '1bh4IoWaVtK68vn5nAo2Nmka5duQsNEIrl5E0pWSRUjk'; 	// Spreadsheet ID.
+    var sheet_name = "Laporan_ Tekanan_Air_1";  // Sheet Name in Google Sheets.
+
+    var sheet_open = SpreadsheetApp.openById(sheet_id);
+    var sheet_target = sheet_open.getSheetByName(sheet_name);
+
+    var rowDataLog = [];
+
+    var newRow = sheet_target.getLastRow() + 1;
+
+    var Data_for_F3;
+    var Data_for_G3;
+    var Data_for_H3;
+    var Data_for_I3;
+
+    var Curr_Date = Utilities.formatDate(new Date(), "Asia/Jakarta", 'dd/MM/yyyy');
+    rowDataLog[0] = Curr_Date;  // Date will be written in column A (in the "DHT11 Sensor Data Logger" section).
+    Data_for_F3 = Curr_Date;  // Date will be written in column F3 (in the "Latest DHT11 Sensor Data" section).
+
+    var Curr_Time = Utilities.formatDate(new Date(), "Asia/Jakarta", 'HH:mm:ss');
+    rowDataLog[1] = Curr_Time;  // Time will be written in column B (in the "DHT11 Sensor Data Logger" section).
+    Data_for_G3 = Curr_Time;  // Time will be written in column G3 (in the "Latest DHT11 Sensor Data" section).
+
+    var sts_val = '';
+
+    for (var param in e.parameter) {
+      Logger.log('In for loop, param=' + param);
+      var value = stripQuotes(e.parameter[param]);
+      Logger.log(param + ':' + e.parameter[param]);
+      switch (param) {
+        case 'sts':
+          sts_val = value;
+          break;
+
+        case 'srs':
+          rowDataLog[2] = value;  // Sensor Reading Status will be written in column C (in the "DHT11 Sensor Data Logger" section).
+          Data_for_H3 = value;  // Sensor Reading Status will be written in column H3 (in the "Latest DHT11 Sensor Data" section).
+          result += ', Sensor Reading Status Written on column C';
+          break;
+
+        case 'pressure':
+          rowDataLog[3] = value;  // The temperature value will be written in column D (in the "DHT11 Sensor Data Logger" section).
+          Data_for_I3 = value;  // The temperature value will be written in column I3 (in the "Latest DHT11 Sensor Data" section).
+          result += ', Pressure Written on column D';
+          break;
+
+        default:
+          result += ", unsupported parameter";
+      }
+    }
+    
+    // Conditions for writing data received from ESP32 to Google Sheets.
+    if (sts_val == 'write') {
+      // Writes data to the "Pressure Sensor Data Logger" section.
+      Logger.log(JSON.stringify(rowDataLog));
+      var newRangeDataLog = sheet_target.getRange(newRow, 1, 1, rowDataLog.length);
+      newRangeDataLog.setValues([rowDataLog]);
+      
+      // Write the data to the "Pressure Sensor Data" section.
+      var RangeDataLatest = sheet_target.getRange('F3:I3');
+      RangeDataLatest.setValues([[Data_for_F3, Data_for_G3, Data_for_H3, Data_for_I3]]);
+
+      return ContentService.createTextOutput(result);
+    }
+    
+    // Conditions for sending data to ESP32 when ESP32 reads data from Google Sheets.
+    if (sts_val == 'read') {
+      // Use the line of code below if you want ESP32 to read data from columns F3 to I3 (Date,Time,Sensor Reading Status).
+      // var all_Data = sheet_target.getRange('F3:I3').getDisplayValues();
+      
+      // Use the line of code below if you want ESP32 to read data from columns K3 to O3 (Sensor Reading Status,Temperature,Humidity,Switch 1, Switch 2).
+      var all_Data = sheet_target.getRange('F3:I3').getValues();
+      return ContentService.createTextOutput(all_Data);
+    }
+  }
+}
+
+function clearData() {
+
+  // Replace 'Sheet1' with the name of your sheet
+  var sheet_target = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Laporan_ Tekanan_Air_1');
+  
+  // Define the range you want to clear. For example, 'A2:Z' clears all rows from A2 to the end of the sheet
+  var range = sheet_target.getRange('A3:D7500'); 
+  
+  // Clear the content in the specified range
+  range.clearContent();
+}
+
+
+function stripQuotes( value ) {
+  return value.replace(/^["']|['"]$/g, "");
+}
+
+
+
+
