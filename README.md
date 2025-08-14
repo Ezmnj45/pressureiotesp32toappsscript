@@ -23,7 +23,7 @@ Menggunakan **Arduino** untuk membaca data dari **sensor water pressure**, mengi
 
 
 ## 📊 Contoh Tampilan
-![Dashboard Google Sheets](images/Screenshot 2024-06-22 181452.png)
+![Dashboard Google Sheets](images/img.png)
 
 ## ⚙️ Cara Kerja Singkat
 1. Arduino membaca data analog dari sensor tekanan air.
